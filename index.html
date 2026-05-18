@@ -1,0 +1,554 @@
+<script>
+// ======== DATA ========
+const MEMBERS = [
+  {no:1, code:'38793', name:'นาย กฤตธร ทองอ่อน'},
+  {no:2, code:'38831', name:'นาย คิดคม ปะเมโท'},
+  {no:3, code:'38857', name:'นาย สุรัชกร สอนเอก'},
+  {no:4, code:'38923', name:'นาย ธีรวัฒน์ หนูมา'},
+  {no:5, code:'38951', name:'นาย เอกภิญโญ เขียวอ่อน'},
+  {no:6, code:'38974', name:'นาย ธนันดร ไชยรัมย์'},
+  {no:7, code:'38600', name:'นางสาว กัลย์ธิดา แก้วขวัญไกร'},
+  {no:8, code:'38689', name:'นางสาว พรรณกาญจน์ ค่าภาน'},
+  {no:9, code:'42136', name:'นางสาว ณัฐรดา อันทาน'},
+  {no:10, code:'38762', name:'นางสาว ณัฏฐณีชา จันทร์โนนม่วง'},
+  {no:11, code:'38805', name:'นางสาว จิราพัชร หรีกประโดน'},
+  {no:12, code:'38844', name:'นางสาว ชนิสรา วรรณสุทธิ์'},
+  {no:13, code:'38849', name:'นางสาว ทรรศยา เต็มรัมย์'},
+  {no:14, code:'38931', name:'นางสาว กัญญาณัฐ สายวิเศษ'},
+  {no:15, code:'38934', name:'นางสาว กุลณัฐดา สมศรี'},
+  {no:16, code:'38935', name:'นางสาว คุณัชชา น้อยพลี'},
+  {no:17, code:'38942', name:'นางสาว ธัญพิชชา หมอทอง'},
+  {no:18, code:'38952', name:'นางสาว ปริชาติ ปะโนรัมย์'},
+  {no:19, code:'38955', name:'นางสาว พาขวัญ ศรีวีระพันธ์'},
+  {no:20, code:'39015', name:'นาย เกียรติคุณ วิโรจน์รัตนกุล'},
+  {no:21, code:'39037', name:'นาย รัชชานนท์ คานศรี'},
+  {no:22, code:'39057', name:'นาย ณัฐดนัย กระเชิญรัมย์'},
+  {no:23, code:'41296', name:'นาย ยิ่งคุณ ยอดเครือ'},
+  {no:24, code:'41297', name:'นาย ธนพล วงษ์กะวัน'},
+  {no:25, code:'41298', name:'นาย ปุญญพัตน์ ธิมะดี'},
+  {no:26, code:'39424', name:'นางสาว กัญญาวีร์ เณรทักลางดอน'},
+  {no:27, code:'39003', name:'นางสาว มณีรัตน์ เจกรัมย์'},
+  {no:28, code:'41402', name:'นางสาว น้ำทิพย์ ช่างดี'},
+  {no:29, code:'39050', name:'นางสาว รุ่งณภา กสิกิจ'},
+  {no:30, code:'41299', name:'นางสาว สิรภัทร รัตนชู'},
+  {no:31, code:'41300', name:'นางสาว ณิชญ์ชญินทร์ จันทรสิงห์'},
+  {no:32, code:'41301', name:'นางสาว วรัทยา นิยมพลอย'},
+  {no:33, code:'41302', name:'นางสาว สิรีกาญจน์ อ่ารุงแคว้น'},
+  {no:34, code:'42120', name:'นางสาว บุณณดา นิทะรัมย์'},
+  {no:35, code:'41304', name:'นางสาว ภัทราวดี ไปดี'},
+  {no:36, code:'41305', name:'นางสาว เมธปิยา แซมรัมย์'},
+  {no:37, code:'41306', name:'นางสาว พพรพิมล กิชะรัมย์'},
+  {no:38, code:'41307', name:'นางสาว โชติกา ลักขษร'},
+];
+
+const LOCAL_STORAGE_KEY = 'roomPaymentData_v3';
+const ONLINE_SYNC_URL = 'https://api.jsonbin.io/v3/b/661839e9e41b4d34e4e2079f?meta=false'; 
+
+let state = {
+  rounds: [{ id: 'r1', name: 'สัปดาห์ที่ 1', payments: {} }],
+  currentRound: 'r1',
+  oldMoney: 0,
+  expenses: []
+};
+
+let isAdmin = false;
+let currentMainTab = 'payment';
+let isModalOpen = false; // สวิตช์เช็คว่าเปิดหน้าต่างค้างอยู่ไหม (เพื่อไม่ให้แอดมินโดนรีเฟรชข้อมูลทับขณะพิมพ์)
+
+// ======== ADMIN ACCESS CONTROL ========
+function toggleAdminMode() {
+  if (isAdmin) {
+    isAdmin = false;
+    document.body.classList.remove('admin-mode');
+    document.getElementById('adminBtn').textContent = '🔑 เข้าสู่ระบบแอดมิน';
+    document.getElementById('adminBadge').className = 'admin-badge status-is-viewer';
+    document.getElementById('adminBadge').textContent = '👁️ โหมดผู้ใช้ทั่วไป (ดูได้อย่างเดียว)';
+    renderTable();
+    renderExpenses();
+    showToast('ออกจากโหมดแอดมินแล้ว');
+  } else {
+    const pw = prompt('กรุณากรอกรหัสผ่านสำหรับแก้ไขข้อมูล:');
+    if (pw === 'CoolKoko') {
+      isAdmin = true;
+      document.body.classList.add('admin-mode');
+      document.getElementById('adminBtn').textContent = '🔒 ออกจากแอดมิน';
+      document.getElementById('adminBadge').className = 'admin-badge status-is-admin';
+      document.getElementById('adminBadge').textContent = '⚡ โหมดแอดมิน (สิทธิ์การแก้ไข)';
+      renderTable();
+      renderExpenses();
+      showToast('ยินดีต้อนรับแอดมิน คูลโคโค่! 🥥');
+    } else if (pw !== null) {
+      alert('❌ รหัสผ่านไม่ถูกต้อง ไม่สามารถแก้ไขข้อมูลได้');
+    }
+  }
+}
+
+// ======== DATA HANDLING (LOCAL + INTERNET SYNC) ========
+async function loadState() {
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved && state.rounds.length === 1 && Object.keys(state.rounds[0].payments).length === 0) {
+      state = JSON.parse(saved);
+    }
+  } catch(e) {}
+
+  await fetchOnlineData();
+
+  if(document.getElementById('expDate') && !document.getElementById('expDate').value) {
+    document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+  }
+
+  renderRoundSelect();
+  renderStats();
+  renderTable();
+  renderExpenses();
+}
+
+// ฟังก์ชันดึงข้อมูลจากออนไลน์แยกออกมาเพื่อทำ Real-time Polling
+async function fetchOnlineData() {
+  if (isModalOpen) return; // ถ้าแอดมินเปิดหน้าต่างบันทึกค้างไว้ จะยังไม่ดึงข้อมูลใหม่เพื่อป้องกันข้อมูลหาย
+  
+  try {
+    const res = await fetch(ONLINE_SYNC_URL, {
+      headers: { "X-Bin-Meta": "false", "X-Master-Key": "$2b$10$vE2bBGrQWhf/7F2T8WqG/.72h7qO4r8EUpG29U9Z8uIAsm2Kq1pX2" }
+    });
+    if(res.ok) {
+      const onlineState = await res.json();
+      if(onlineState && onlineState.rounds) {
+        // อัปเดตเฉพาะกรณีที่ข้อมูลเปลี่ยนไปจากเดิม
+        if (JSON.stringify(state) !== JSON.stringify(onlineState)) {
+          state = onlineState;
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+          renderRoundSelect();
+          renderStats();
+          renderTable();
+          renderExpenses();
+        }
+      }
+    }
+  } catch(e) {
+    console.log("เชื่อมต่อออนไลน์ไม่ได้ ใช้ข้อมูลชั่วคราวในเครื่อง");
+  }
+}
+
+async function saveState() {
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+  
+  try {
+    await fetch(ONLINE_SYNC_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': '$2b$10$vE2bBGrQWhf/7F2T8WqG/.72h7qO4r8EUpG29U9Z8uIAsm2Kq1pX2'
+      },
+      body: JSON.stringify(state)
+    });
+  } catch(e) {
+    alert("⚠️ ไม่สามารถอัปเดตออนไลน์ได้เนื่องจากเครือข่ายมีปัญหา ข้อมูลเซฟไว้ในเครื่องก่อนชั่วคราว");
+  }
+}
+
+function currentRoundData() {
+  return state.rounds.find(r => r.id === state.currentRound) || state.rounds[0];
+}
+
+// ======== TAB NAVIGATION ========
+function switchMainTab(tabName) {
+  currentMainTab = tabName;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+  
+  document.getElementById(`tab-${tabName}`).classList.add('active');
+  document.getElementById(`section-${tabName}`).classList.add('active');
+}
+
+// ======== ROUNDS ========
+function addRound() {
+  if(!isAdmin) return alert('ต้องล็อกอินแอดมินก่อนครับ');
+  const inp = document.getElementById('newRoundName');
+  const name = inp.value.trim() || `สัปดาห์ที่ ${state.rounds.length + 1}`;
+  const id = 'r' + Date.now();
+  state.rounds.push({ id, name, payments: {} });
+  state.currentRound = id;
+  inp.value = '';
+  saveState();
+  renderRoundSelect();
+  renderStats();
+  renderTable();
+  showToast(`เพิ่มรอบ "${name}" แล้ว`);
+}
+
+function switchRound() {
+  state.currentRound = document.getElementById('roundSelect').value;
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+  renderStats();
+  renderTable();
+}
+
+function renderRoundSelect() {
+  const sel = document.getElementById('roundSelect');
+  if(!sel) return;
+  sel.innerHTML = state.rounds.map(r =>
+    `<option value="${r.id}" ${r.id === state.currentRound ? 'selected' : ''}>${r.name}</option>`
+  ).join('');
+}
+
+// ======== STATS ========
+function renderStats() {
+  const rd = currentRoundData();
+  const payments = rd.payments;
+  let paidCount = 0, lateCount = 0, unpaidCount = 0;
+  
+  let totalIncomeFromRounds = 0;
+  state.rounds.forEach(r => {
+    Object.values(r.payments).forEach(p => {
+      if (p.status === 'paid') totalIncomeFromRounds += 50;
+      if (p.status === 'late') totalIncomeFromRounds += 70;
+    });
+  });
+
+  MEMBERS.forEach(m => {
+    const p = payments[m.code];
+    if (!p || p.status === 'unpaid') { unpaidCount++; }
+    else if (p.status === 'paid') { paidCount++; }
+    else if (p.status === 'late') { lateCount++; }
+  });
+
+  let totalExpenses = 0;
+  if(state.expenses) {
+    state.expenses.forEach(e => totalExpenses += Number(e.amount || 0));
+  }
+
+  const oldMoney = Number(state.oldMoney || 0);
+  const netBalance = oldMoney + totalIncomeFromRounds - totalExpenses;
+
+  const statsBar = document.getElementById('statsBar');
+  if(statsBar) {
+    statsBar.innerHTML = `
+      <div class="stat-card"><div class="stat-num purple">${paidCount+lateCount}/${MEMBERS.length}</div><p>จ่ายแล้วรอบนี้</p></div>
+      <div class="stat-card"><div class="stat-num blue">฿${oldMoney}</div><p>เงินเก่าสะสม</p></div>
+      <div class="stat-card"><div class="stat-num green">฿${totalIncomeFromRounds}</div><p>รายรับรวมทุกสัปดาห์</p></div>
+      <div class="stat-card"><div class="stat-num red">฿${totalExpenses}</div><p>รายจ่ายรวม</p></div>
+      <div class="stat-card" style="border-color:var(--green); background:rgba(74,222,128,0.03)"><div class="stat-num green">฿${netBalance}</div><p>💰 เงินคงเหลือสุทธิ</p></div>
+    `;
+  }
+  document.getElementById('exportSummary').textContent = `รอบ: ${rd.name} | จ่ายแล้ว ${paidCount+lateCount}/${MEMBERS.length} คน | เงินห้องคงเหลือ: ฿${netBalance}`;
+}
+
+// ======== TABLE & FILTERS ========
+let currentFilter = 'all';
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function renderTable() {
+  const rd = currentRoundData();
+  const payments = rd.payments;
+  const searchInput = document.getElementById('searchInput');
+  const search = searchInput ? searchInput.value.toLowerCase() : '';
+
+  let rows = MEMBERS.map(m => {
+    const p = payments[m.code];
+    const status = p ? p.status : 'unpaid';
+    return { ...m, pay: p, status };
+  });
+
+  if (search) {
+    rows = rows.filter(r => r.name.toLowerCase().includes(search) || r.code.includes(search));
+  }
+  if (currentFilter !== 'all') {
+    rows = rows.filter(r => r.status === currentFilter);
+  }
+
+  document.getElementById('tableBody').innerHTML = rows.map(r => {
+    let badge = '', dateStr = '—', amtStr = '—';
+    if (r.status === 'paid') {
+      badge = '<span class="status-badge status-paid">✅ จ่ายแล้ว</span>';
+      dateStr = r.pay.date || '—';
+      amtStr = '50 บาท';
+    } else if (r.status === 'late') {
+      badge = '<span class="status-badge status-late">⚠️ จ่ายสาย</span>';
+      dateStr = r.pay.date || '—';
+      amtStr = '70 บาท <span class="fine-tag">+ปรับ 20</span>';
+    } else {
+      badge = '<span class="status-badge status-unpaid">❌ ยังไม่จ่าย</span>';
+    }
+
+    const slipBtn = r.pay && r.pay.slip
+      ? `<button class="action-btn slip-btn" onclick='viewSlip("${r.code}")'>🖼 ดูสลิป</button>`
+      : '';
+
+    let editBtn = '';
+    if (isAdmin) {
+      editBtn = r.pay && r.pay.status !== 'unpaid'
+        ? `<button class="action-btn" onclick='openPayModal("${r.code}")'>✏️ แก้ไข</button>`
+        : `<button class="action-btn paid-btn" onclick='openPayModal("${r.code}")'>+ บันทึก</button>`;
+    } else {
+      editBtn = `<span style="color:var(--muted); font-size:0.75rem">🔒 ล็อกไว้</span>`;
+    }
+
+    return `<tr>
+      <td class="badge-no">${r.no}</td>
+      <td class="member-code">${r.code}</td>
+      <td>${r.name}</td>
+      <td>${badge}</td>
+      <td style="font-size:0.82rem;color:var(--muted)">${dateStr}</td>
+      <td style="font-size:0.82rem">${amtStr}</td>
+      <td><div class="btn-group">${editBtn}${slipBtn}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ======== PAY MODAL ACTIONS ========
+let currentCode = null;
+let slipDataUrl = null;
+
+function openPayModal(code) {
+  if(!isAdmin) return;
+  isModalOpen = true; // ล็อกระบบซิงก์ชั่วคราว
+  const m = MEMBERS.find(x => x.code === code);
+  currentCode = code;
+  slipDataUrl = null;
+
+  document.getElementById('payModalName').textContent = `${m.no}. ${m.name} (${code})`;
+  document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('payStatus').value = 'paid';
+  document.getElementById('amountDue').textContent = '50 บาท';
+
+  const rd = currentRoundData();
+  const existing = rd.payments[code];
+  if (existing) {
+    document.getElementById('payStatus').value = existing.status;
+    if (existing.date) document.getElementById('payDate').value = existing.date;
+    updateAmountDue();
+    if (existing.slip) {
+      slipDataUrl = existing.slip;
+      document.getElementById('slipPreviewImg').src = existing.slip;
+      document.getElementById('slipPreview').classList.add('visible');
+    } else {
+      document.getElementById('slipPreview').classList.remove('visible');
+    }
+  } else {
+    document.getElementById('slipPreview').classList.remove('visible');
+  }
+
+  document.getElementById('payModal').classList.add('open');
+}
+
+function updateAmountDue() {
+  const v = document.getElementById('payStatus').value;
+  if(v === 'late') document.getElementById('amountDue').textContent = '70 บาท (50 + ปรับ 20)';
+  else if(v === 'paid') document.getElementById('amountDue').textContent = '50 บาท';
+  else document.getElementById('amountDue').textContent = '0 บาท (ลบประวัติจ่าย)';
+}
+
+function previewSlip(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    slipDataUrl = ev.target.result;
+    document.getElementById('slipPreviewImg').src = slipDataUrl;
+    document.getElementById('slipPreview').classList.add('visible');
+  };
+  reader.readAsDataURL(file);
+}
+
+function savePay() {
+  if (!currentCode) return;
+  const rd = currentRoundData();
+  const statusValue = document.getElementById('payStatus').value;
+
+  if(statusValue === 'unpaid') {
+    delete rd.payments[currentCode];
+  } else {
+    rd.payments[currentCode] = {
+      status: statusValue,
+      date: document.getElementById('payDate').value,
+      slip: slipDataUrl || (rd.payments[currentCode]?.slip) || null,
+      savedAt: new Date().toISOString()
+    };
+  }
+  
+  saveState();
+  renderStats();
+  renderTable();
+  closeModal('payModal');
+  showToast('บันทึกยอดชำระแล้ว ✓');
+}
+
+// ======== OLD MONEY BUDGET MANAGEMENT ========
+function openOldMoneyModal() {
+  isModalOpen = true;
+  document.getElementById('oldMoneyInput').value = state.oldMoney || 0;
+  document.getElementById('oldMoneyModal').classList.add('open');
+}
+
+function saveOldMoney() {
+  const val = document.getElementById('oldMoneyInput').value;
+  state.oldMoney = Number(val) || 0;
+  saveState();
+  renderStats();
+  closeModal('oldMoneyModal');
+  showToast('อัปเดตยอดเงินเก่าห้องเรียบร้อยครับ!');
+}
+
+// ======== EXPENSES MANAGEMENT ========
+function addExpense() {
+  if(!isAdmin) return alert('เฉพาะแอดมินจึงเพิ่มรายจ่ายได้');
+  const title = document.getElementById('expTitle').value.trim();
+  const amount = Number(document.getElementById('expAmount').value);
+  const date = document.getElementById('expDate').value;
+
+  if(!title || !amount) {
+    alert('⚠️ กรุณากรอกชื่อรายละเอียดและจำนวนเงินจ่ายด้วยครับ');
+    return;
+  }
+
+  if(!state.expenses) state.expenses = [];
+  
+  state.expenses.push({
+    id: 'exp' + Date.now(),
+    title: title,
+    amount: amount,
+    date: date || new Date().toISOString().split('T')[0]
+  });
+
+  document.getElementById('expTitle').value = '';
+  document.getElementById('expAmount').value = '';
+
+  saveState();
+  renderStats();
+  renderExpenses();
+  showToast('บันทึกค่าใช้จ่ายห้องสำเร็จ! 💸');
+}
+
+function deleteExpense(id) {
+  if(!isAdmin) return;
+  if(confirm('คุณแน่ใจไหมว่าต้องการลบรายการจ่ายนี้ออก?')) {
+    state.expenses = state.expenses.filter(e => e.id !== id);
+    saveState();
+    renderStats();
+    renderExpenses();
+    showToast('ลบรายการออกแล้ว');
+  }
+}
+
+function renderExpenses() {
+  const tbody = document.getElementById('expenseTableBody');
+  if(!tbody) return;
+  if(!state.expenses || state.expenses.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${isAdmin ? 4 : 3}" style="text-align:center; color:var(--muted)">ยังไม่มีประวัติการเบิกจ่ายเงินห้อง</td></tr>`;
+    return;
+  }
+
+  const sortedExpenses = [...state.expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  tbody.innerHTML = sortedExpenses.map(e => {
+    const delBtn = isAdmin 
+      ? `<td><button class="action-btn" style="color:var(--red); border-color:rgba(248,113,113,0.2)" onclick="deleteExpense('${e.id}')">🗑️ ลบ</button></td>`
+      : '';
+    return `<tr>
+      <td style="font-family:'IBM Plex Mono', monospace; font-size:0.85rem; color:var(--muted)">${e.date}</td>
+      <td style="font-weight:500">${e.title}</td>
+      <td style="color:var(--red); font-weight:600">- ฿${e.amount} บาท</td>
+      ${delBtn}
+    </tr>`;
+  }).join('');
+}
+
+// ======== SLIP VIEW OVERLAY ========
+function viewSlip(code) {
+  isModalOpen = true;
+  const m = MEMBERS.find(x => x.code === code);
+  const rd = currentRoundData();
+  const p = rd.payments[code];
+  if (!p || !p.slip) return;
+  document.getElementById('slipModalName').textContent = m.name;
+  document.getElementById('slipViewImg').src = p.slip;
+  document.getElementById('slipModalDate').textContent = `วันที่จ่าย: ${p.date || '—'}`;
+  document.getElementById('slipModal').classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  isModalOpen = false; // ปลดล็อกให้ระบบสามารถกลับมาดึงข้อมูลออโต้ได้ปกติ
+}
+
+// ======== EXPORT FUNCTIONALITIES ========
+function exportCSV() {
+  const rd = currentRoundData();
+  const rows = [['ลำดับ','รหัส','ชื่อ-นามสกุล','สถานะ','วันที่จ่าย','ยอด','มีสลิป']];
+  MEMBERS.forEach(m => {
+    const p = rd.payments[m.code];
+    rows.push([
+      m.no, m.code, m.name,
+      p ? (p.status === 'paid' ? 'จ่ายแล้ว' : 'จ่ายสาย') : 'ยังไม่จ่าย',
+      p?.date || '',
+      p ? (p.status === 'late' ? 70 : 50) : 0,
+      p?.slip ? 'มี' : 'ไม่มี'
+    ]);
+  });
+  const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `เงินห้อง_${rd.name}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function exportSummaryTxt() {
+  const rd = currentRoundData();
+  let paid = [], late = [], unpaid = [];
+  MEMBERS.forEach(m => {
+    const p = rd.payments[m.code];
+    if (!p || p.status === 'unpaid') unpaid.push(m);
+    else if (p.status === 'paid') paid.push(m);
+    else late.push(m);
+  });
+  
+  let roundMoney = paid.length * 50 + late.length * 70;
+  let totalExpenses = 0;
+  if(state.expenses) state.expenses.forEach(e => totalExpenses += Number(e.amount || 0));
+
+  let txt = `📊 สรุปยอดเงินห้องออนไลน์ — ${rd.name}\n`;
+  txt += `${'─'.repeat(40)}\n`;
+  txt += `✅ จ่ายแล้ว (${paid.length} คน):\n`;
+  paid.forEach(m => txt += `  • ${m.name}\n`);
+  txt += `\n⚠️ จ่ายสาย +ค่าปรับ (${late.length} คน):\n`;
+  late.forEach(m => txt += `  • ${m.name}\n`);
+  txt += `\n❌ ยังไม่จ่าย (${unpaid.length} คน):\n`;
+  unpaid.forEach(m => txt += `  • ${m.name}\n`);
+  txt += `\n${'─'.repeat(40)}\n`;
+  txt += `💰 ยอดเก็บได้ของรอบนี้: ${roundMoney} บาท\n`;
+  txt += `🪙 ยอดเงินสะสมเก่าตั้งต้น: ${state.oldMoney || 0} บาท\n`;
+  txt += `💸 ยอดหักรายจ่ายห้องรวม: ${totalExpenses} บาท\n`;
+  txt += `✨ เงินคงเหลือสุทธิทั้งหมดในห้อง: ${(Number(state.oldMoney||0) + roundMoney) - totalExpenses} บาท\n`;
+  
+  const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `สรุปเงินห้อง_${rd.name}.txt`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ======== INITIAL LOAD & REAL-TIME POLLING ========
+window.addEventListener('DOMContentLoaded', () => {
+  loadState();
+  
+  // 🔄 ตั้งเวลาดึงข้อมูลใหม่จากออนไลน์อัตโนมัติทุกๆ 10 วินาที (10000 มิลลิวินาที)
+  setInterval(fetchOnlineData, 10000); 
+});
+</script>
