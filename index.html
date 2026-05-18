@@ -1,526 +1,1188 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบริหารจัดการเงินห้องเรียนออนไลน์</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #0d1117; color: #c9d1d9; }
-        .card { background-color: #161b22; border: 1px solid #30363d; border-radius: 12px; }
-        .input-dark { background-color: #0d1117; border: 1px solid #30363d; color: #c9d1d9; }
-        .input-dark:focus { border-color: #58a6ff; outline: none; }
-        .modal { background-color: rgba(0,0,0,0.8); display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; align-items: center; justify-content: center; }
-        .status-badge { padding: 4px 12px; border-radius: 9999px; font-size: 0.85rem; font-weight: 500; }
-        .status-success { background-color: rgba(46, 160, 67, 0.15); color: #3fb950; border: 1px solid rgba(46, 160, 67, 0.4); }
-        .status-warning { background-color: rgba(210, 153, 34, 0.15); color: #d29922; border: 1px solid rgba(210, 153, 34, 0.4); }
-        .status-danger { background-color: rgba(248, 81, 73, 0.15); color: #f85149; border: 1px solid rgba(248, 81, 73, 0.4); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบเก็บเงินห้อง</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --surface2: #22222e;
+    --border: #2e2e3e;
+    --accent: #7c6af7;
+    --accent2: #4fc3f7;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --text: #e8e8f0;
+    --muted: #666680;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: linear-gradient(135deg, #1a1a22 0%, #12121a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .header h1 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .header p { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+  .round-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .round-selector label { font-size: 0.85rem; color: var(--muted); }
+  .round-selector select, .round-selector input[type="text"], .round-selector input[type="number"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .round-selector select:focus, .round-selector input:focus {
+    border-color: var(--accent);
+  }
+  .btn-add-round {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+  }
+  .btn-add-round:hover { opacity: 0.85; }
+
+  /* Admin Badge & Login */
+  .admin-status-bar {
+    background: #221c44;
+    border-bottom: 1px solid #3d3080;
+    padding: 6px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+  }
+  .admin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+  }
+  .status-is-admin { background: rgba(74,222,128,0.2); color: var(--green); }
+  .status-is-viewer { background: rgba(255,255,255,0.05); color: var(--muted); }
+  
+  .btn-admin-login {
+    background: transparent; border: 1px solid var(--border); color: var(--text);
+    padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.78rem;
+  }
+  .btn-admin-login:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ===== MAIN TABS ===== */
+  .main-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 16px 24px 0;
+  }
+  .tab-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 10px 18px;
+    border-radius: 10px 10px 0 0;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: none;
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: var(--border);
+    box-shadow: 0 -2px 10px rgba(124,106,247,0.15);
+  }
+
+  .view-section { display: none; }
+  .view-section.active { display: block; }
+
+  /* ===== STATS ===== */
+  .stats {
+    display: flex;
+    gap: 10px;
+    padding: 16px 24px;
+    overflow-x: auto;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 20px;
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.3rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .stat-card p { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .yellow { color: var(--yellow); }
+  .purple { color: var(--accent); }
+  .blue { color: var(--accent2); }
+
+  /* ===== SEARCH & FILTERS ===== */
+  .search-bar {
+    padding: 0 24px 16px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .search-bar input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.9rem;
+    flex: 1;
+    min-width: 200px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-bar input:focus { border-color: var(--accent); }
+  .filter-btns { display: flex; gap: 6px; }
+  .filter-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(124,106,247,0.1); }
+
+  /* ===== TABLE ===== */
+  .table-wrap { padding: 0 24px 20px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 600px; }
+  thead th {
+    background: var(--surface2);
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr {
+    border-bottom: 1px solid rgba(46,46,62,0.5);
+    transition: background 0.15s;
+  }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  tbody td { padding: 12px 14px; font-size: 0.88rem; vertical-align: middle; }
+
+  .badge-no { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--muted); }
+  .member-code { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--muted); }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .status-paid { background: rgba(74,222,128,0.12); color: var(--green); border: 1px solid rgba(74,222,128,0.25); }
+  .status-late { background: rgba(251,191,36,0.12); color: var(--yellow); border: 1px solid rgba(251,191,36,0.25); }
+  .status-unpaid { background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.25); }
+
+  /* Action buttons */
+  .action-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .action-btn.paid-btn:hover { border-color: var(--green); color: var(--green); }
+  .action-btn.slip-btn { color: var(--accent2); border-color: rgba(79,195,247,0.3); }
+  .action-btn.slip-btn:hover { background: rgba(79,195,247,0.1); }
+
+  .btn-group { display: flex; gap: 5px; flex-wrap: wrap; }
+  .admin-only-ui { display: none !important; }
+  body.admin-mode .admin-only-ui { display: inline-flex !important; }
+  body.admin-mode .admin-only-block { display: block !important; }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    max-width: 480px;
+    width: 100%;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+  .modal .sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 20px; }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); width: 30px; height: 30px;
+    border-radius: 50%; cursor: pointer; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { color: var(--text); border-color: var(--text); }
+
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; }
+  .form-group input[type="date"],
+  .form-group input[type="text"],
+  .form-group select,
+  .form-group input[type="number"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+
+  .slip-upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .slip-upload-area:hover { border-color: var(--accent); background: rgba(124,106,247,0.05); }
+  .slip-upload-area input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .slip-upload-area p { font-size: 0.85rem; color: var(--muted); }
+  .slip-upload-area .icon { font-size: 2rem; margin-bottom: 8px; }
+
+  .slip-preview {
+    margin-top: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+    display: none;
+  }
+  .slip-preview img { width: 100%; max-height: 200px; object-fit: contain; background: var(--surface2); }
+  .slip-preview.visible { display: block; }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-primary {
+    flex: 1; background: var(--accent); color: white; border: none;
+    padding: 10px; border-radius: 8px; font-family: 'Sarabun', sans-serif;
+    font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-secondary {
+    background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+    padding: 10px 20px; border-radius: 8px; font-family: 'Sarabun', sans-serif;
+    font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--muted); }
+
+  .amount-display {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .amount-display .label { font-size: 0.82rem; color: var(--muted); }
+  .amount-display .val { font-family: 'IBM Plex Mono', monospace; font-size: 1.1rem; font-weight: 600; color: var(--green); }
+
+  /* Slip view modal */
+  .slip-view-img { width: 100%; border-radius: 8px; max-height: 400px; object-fit: contain; background: #111; }
+
+  /* ===== EXPORT BAR ===== */
+  .export-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    z-index: 150;
+  }
+  .export-bar p { font-size: 0.82rem; color: var(--muted); }
+  .export-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 7px 16px; border-radius: 8px;
+    font-family: 'Sarabun', sans-serif; font-size: 0.85rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .export-btn:hover { border-color: var(--green); color: var(--green); }
+
+  .fine-tag {
+    background: rgba(251,191,36,0.15);
+    color: var(--yellow);
+    font-size: 0.72rem;
+    padding: 2px 7px;
+    border-radius: 10px;
+    margin-left: 4px;
+    font-weight: 600;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+    background: var(--green); color: #0f0f13;
+    padding: 10px 20px; border-radius: 8px; font-size: 0.88rem; font-weight: 600;
+    z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 600px) {
+    .stats { padding: 12px 16px; }
+    .search-bar, .table-wrap { padding-left: 16px; padding-right: 16px; }
+    .header { padding: 14px 16px; }
+  }
+</style>
 </head>
-<body class="p-4 md:p-8">
+<body>
 
-    <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center mb-6 gap-4 p-4 card">
-        <div class="flex items-center gap-3">
-            <div class="p-3 bg-purple-600 rounded-lg text-white font-bold text-xl">🏫</div>
-            <div>
-                <h1 class="text-xl font-bold text-white">ระบบเงินห้องเรียนออนไลน์</h1>
-                <p class="text-xs text-gray-400">อัปเดตข้อมูลอัตโนมัติแบบเรียลไทม์</p>
-            </div>
-        </div>
-        <div class="flex gap-2 w-full md:w-auto">
-            <button id="adminAuthBtn" onclick="toggleAdminLogin()" class="flex-1 md:flex-none px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition text-sm">🔑 เข้าสู่ระบบแอดมิน</button>
-            <div id="adminBadge" class="hidden px-4 py-2 bg-red-900/40 text-red-400 border border-red-500/30 font-bold rounded-lg text-sm flex items-center gap-1">⚡ โหมดแอดมิน</div>
-            <button id="logoutBtn" onclick="logoutAdmin()" class="hidden px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm">ออก</button>
-        </div>
+<div class="admin-status-bar">
+  <div id="adminBadge" class="admin-badge status-is-viewer">👁️ โหมดผู้ใช้ทั่วไป (ดูได้อย่างเดียว)</div>
+  <button id="adminBtn" class="btn-admin-login" onclick="toggleAdminMode()">🔑 เข้าสู่ระบบแอดมิน</button>
+</div>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>💰 ระบบเก็บเงินห้องออนไลน์</h1>
+      <p>สัปดาห์ละ 50 บาท • ค่าปรับสาย 20 บาท</p>
+    </div>
+    <div class="round-selector">
+      <label>รอบ:</label>
+      <select id="roundSelect" onchange="switchRound()"></select>
+      
+      <span class="admin-only-ui" style="gap:10px">
+        <input type="text" id="newRoundName" placeholder="ชื่อรอบใหม่..." style="width:130px" />
+        <button class="btn-add-round" onclick="addRound()">+ เพิ่มรอบ</button>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="main-tabs">
+  <button class="tab-btn active" id="tab-payment" onclick="switchMainTab('payment')">📊 ตารางเงินห้อง</button>
+  <button class="tab-btn" id="tab-expenses" onclick="switchMainTab('expenses')">💸 รายจ่ายห้อง</button>
+</div>
+
+<div id="section-payment" class="view-section active">
+  <div class="stats" id="statsBar"></div>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="🔍 ค้นหาชื่อ หรือ รหัส..." oninput="renderTable()" />
+    <div class="filter-btns">
+      <button class="filter-btn active" onclick="setFilter('all', this)">ทั้งหมด</button>
+      <button class="filter-btn" onclick="setFilter('paid', this)">✅ จ่ายแล้ว</button>
+      <button class="filter-btn" onclick="setFilter('late', this)">⚠️ จ่ายสาย</button>
+      <button class="filter-btn" onclick="setFilter('unpaid', this)">❌ ยังไม่จ่าย</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>รหัส</th>
+          <th>ชื่อ-นามสกุล</th>
+          <th>สถานะ</th>
+          <th>วันที่จ่าย</th>
+          <th>ยอดรวม</th>
+          <th>จัดการ</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="section-expenses" class="view-section">
+  <div class="search-bar admin-only-block" style="display:none; margin-top:16px;">
+    <div style="background:var(--surface); border:1px solid var(--border); padding:16px; border-radius:12px; width:100%">
+      <h3 style="font-size:0.95rem; margin-bottom:12px; color:var(--accent)">➕ บันทึกรายจ่ายใหม่</h3>
+      <div style="display:flex; gap:10px; flex-wrap:wrap">
+        <input type="text" id="expTitle" placeholder="รายการ เช่น ค่าฟิวเจอร์บอร์ดทำบอร์ด" style="flex:2; min-width:180px;" />
+        <input type="number" id="expAmount" placeholder="จำนวนเงิน (บาท)" style="flex:1; min-width:100px; background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:8px; border-radius:8px;" />
+        <input type="date" id="expDate" style="flex:1; min-width:120px; background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:8px; border-radius:8px;" />
+        <button class="btn-add-round" onclick="addExpense()">💾 บันทึกรายจ่าย</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:10px">
+    <h3 style="font-size:1rem; margin-bottom:12px; padding-left:4px">📋 ประวัติการใช้จ่ายเงินห้อง</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>วันที่ใช้</th>
+          <th>รายการรายละเอียด</th>
+          <th>จำนวนเงินจ่าย</th>
+          <th class="admin-only-ui">จัดการ</th>
+        </tr>
+      </thead>
+      <tbody id="expenseTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="export-bar">
+  <p id="exportSummary">รอบปัจจุบัน: —</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="export-btn admin-only-ui" onclick="openOldMoneyModal()">💰 ตั้งค่าเงินเก่า</button>
+    <button class="export-btn" onclick="exportCSV()">📥 Export CSV</button>
+    <button class="export-btn" onclick="exportSummaryTxt()">📋 สรุปยอด</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="payModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('payModal')">✕</button>
+    <h2>บันทึกการจ่ายเงิน</h2>
+    <p class="sub" id="payModalName">—</p>
+
+    <div class="amount-display">
+      <span class="label">ยอดที่ต้องจ่าย</span>
+      <span class="val" id="amountDue">50 บาท</span>
     </div>
 
-    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="card p-4 flex flex-col justify-between">
-            <span class="text-gray-400 text-sm">💰 เงินคงเหลือสุทธิ</span>
-            <span id="netBalance" class="text-3xl font-bold text-green-400 mt-2">0.00 บาท</span>
-        </div>
-        <div class="card p-4 flex flex-col justify-between">
-            <span class="text-gray-400 text-sm">📥 รายรับทั้งหมด</span>
-            <span id="totalIncome" class="text-2xl font-bold text-blue-400 mt-2">0.00 บาท</span>
-        </div>
-        <div class="card p-4 flex flex-col justify-between">
-            <span class="text-gray-400 text-sm">📤 รายจ่ายทั้งหมด</span>
-            <span id="totalExpense" class="text-2xl font-bold text-red-400 mt-2">0.00 บาท</span>
-        </div>
-        <div class="card p-4 flex flex-col justify-between">
-            <span class="text-gray-400 text-sm">📅 รอบการเก็บเงินปัจจุบัน</span>
-            <div class="flex items-center gap-2 mt-2">
-                <span id="periodLabel" class="text-lg font-bold text-white">สัปดาห์ที่ 1</span>
-                <button onclick="openPeriodModal()" class="admin-only hidden text-xs text-purple-400 hover:underline">เปลี่ยน</button>
-            </div>
-        </div>
+    <div class="form-group">
+      <label>สถานะ</label>
+      <select id="payStatus" onchange="updateAmountDue()">
+        <option value="paid">✅ จ่ายตรงเวลา (50 บาท)</option>
+        <option value="late">⚠️ จ่ายสาย +ค่าปรับ 20 บาท (70 บาท)</option>
+        <option value="unpaid">❌ ยังไม่จ่าย (ล้างข้อมูลเก่า)</option>
+      </select>
     </div>
 
-    <div class="max-w-6xl mx-auto mb-6 flex gap-2 border-b border-gray-700">
-        <button onclick="switchTab('income-tab')" id="btn-income-tab" class="px-6 py-3 border-b-2 border-purple-500 font-medium text-white transition">📥 รายรับสมาชิกห้อง</button>
-        <button onclick="switchTab('expense-tab')" id="btn-expense-tab" class="px-6 py-3 border-b-2 border-transparent text-gray-400 font-medium transition">💸 รายจ่ายห้อง</button>
+    <div class="form-group">
+      <label>วันที่จ่าย</label>
+      <input type="date" id="payDate" />
     </div>
 
-    <div id="income-tab" class="tab-content max-w-6xl mx-auto">
-        <div class="card p-4 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
-            <input type="text" id="searchInput" oninput="filterTable()" placeholder="🔍 ค้นหาชื่อ หรือ เลขที่..." class="w-full md:w-1/3 p-2.5 rounded-lg input-dark text-sm">
-            <div class="flex gap-2 w-full md:w-auto">
-                <button onclick="exportSummaryText()" class="flex-1 md:flex-none px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg text-sm flex items-center justify-center gap-1">📋 สรุปยอด</button>
-                <button onclick="exportCSV()" class="flex-1 md:flex-none px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg text-sm flex items-center justify-center gap-1">📥 Export CSV</button>
-            </div>
-        </div>
-
-        <div class="card overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-800/50 border-b border-gray-700 text-gray-300 text-sm">
-                            <th class="p-4 w-20 text-center">เลขที่</th>
-                            <th class="p-4">ชื่อ-นามสกุล</th>
-                            <th class="p-4 text-center">สถานะ</th>
-                            <th class="p-4 text-center">วันที่จ่าย</th>
-                            <th class="p-4 text-center">หลักฐาน</th>
-                            <th class="p-4 text-center admin-only hidden">จัดการ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="studentTableBody">
-                        </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="form-group">
+      <label>แนบสลิป (ถ้ามี)</label>
+      <div class="slip-upload-area" id="uploadArea">
+        <input type="file" accept="image/*" onchange="previewSlip(event)" />
+        <div class="icon">📎</div>
+        <p>แตะเพื่อเลือกรูปสลิป</p>
+        <p style="font-size:0.75rem;margin-top:4px">รองรับ JPG, PNG, HEIC</p>
+      </div>
+      <div class="slip-preview" id="slipPreview">
+        <img id="slipPreviewImg" src="" alt="สลิป" />
+      </div>
     </div>
 
-    <div id="expense-tab" class="tab-content max-w-6xl mx-auto hidden">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="card p-5 h-fit admin-only hidden">
-                <h3 class="text-lg font-bold text-white mb-4">➕ บันทึกรายจ่ายใหม่</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">รายการ/คำอธิบายรายจ่าย</label>
-                        <input type="text" id="expDesc" placeholder="เช่น ค่าฟิวเจอร์บอร์ดจัดบอร์ดห้อง" class="w-full p-2.5 rounded-lg input-dark text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">จำนวนเงิน (บาท)</label>
-                        <input type="number" id="expAmount" placeholder="0.00" class="w-full p-2.5 rounded-lg input-dark text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">วันที่จ่าย</label>
-                        <input type="date" id="expDate" class="w-full p-2.5 rounded-lg input-dark text-sm">
-                    </div>
-                    <button onclick="addExpense()" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition text-sm">💾 บันทึกรายจ่าย</button>
-                </div>
-            </div>
-            <div class="card p-5 md:col-span-2">
-                <h3 class="text-lg font-bold text-white mb-4">📜 ประวัติรายจ่ายห้อง</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="border-b border-gray-700 text-gray-400 text-xs uppercase">
-                                <th class="pb-3">วันที่</th>
-                                <th class="pb-3">รายการ</th>
-                                <th class="pb-3 text-right">จำนวนเงิน</th>
-                                <th class="pb-3 text-center admin-only hidden">ลบ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expenseTableBody">
-                            </tbody>
-                    </table>
-                </table>
-                <div id="noExpense" class="text-center py-8 text-gray-500 text-sm hidden">ยังไม่มีข้อมูลรายจ่ายห้อง</div>
-            </div>
-        </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('payModal')">ยกเลิก</button>
+      <button class="btn-primary" onclick="savePay()">💾 บันทึก</button>
     </div>
+  </div>
+</div>
 
-    <div id="recordModal" class="modal">
-        <div class="card p-6 w-full max-w-md mx-4 relative">
-            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">📝 บันทึกข้อมูล: <span id="modalStudentName" class="text-purple-400"></span></h3>
-            <input type="hidden" id="modalStudentIndex">
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">สถานะการชำระเงิน</label>
-                    <select id="modalStatus" class="w-full p-2.5 rounded-lg input-dark text-sm">
-                        <option value="✅ จ่ายแล้ว">✅ จ่ายแล้ว (ตรงเวลา 50 บาท)</option>
-                        <option value="⚠️ จ่ายสาย">⚠️ จ่ายสาย (ปรับเป็น 70 บาท)</option>
-                        <option value="❌ ยังไม่จ่าย">❌ ยังไม่จ่าย (ล้างข้อมูลเก่าออก)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">วันที่จ่าย</label>
-                    <input type="date" id="modalDate" class="w-full p-2.5 rounded-lg input-dark text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">รูปภาพหลักฐานสลิป (ถ้ามี)</label>
-                    <input type="file" id="modalFile" accept="image/*" class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-800 file:text-gray-300 hover:file:bg-gray-700">
-                    <div id="modalSlipPreviewContainer" class="mt-2 hidden">
-                        <p class="text-xs text-purple-400 mb-1">มีรูปสลิปในระบบแล้ว (อัปโหลดใหม่เพื่อเปลี่ยนรูปได้)</p>
-                    </div>
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button onclick="closeRecordModal()" class="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">ยกเลิก</button>
-                    <button onclick="saveRecord()" class="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg text-sm">💾 บันทึกข้อมูล</button>
-                </div>
-            </div>
-        </div>
+<div class="modal-overlay" id="oldMoneyModal">
+  <div class="modal" style="max-width:360px">
+    <button class="modal-close" onclick="closeModal('oldMoneyModal')">✕</button>
+    <h2>💰 เงินเก่าสะสมต้นงวด</h2>
+    <p class="sub">จำนวนเงินคงเหลือเก่าที่เก็บไว้ก่อนหน้านี้</p>
+    <div class="form-group">
+      <label>จำนวนเงินเก่าที่มีอยู่ (บาท)</label>
+      <input type="number" id="oldMoneyInput" placeholder="ตัวอย่าง: 1500" />
     </div>
-
-    <div id="imageModal" class="modal" onclick="closeImageModal()">
-        <div class="relative max-w-lg w-full p-4" onclick="event.stopPropagation()">
-            <img id="popupImage" src="" alt="Slip Evidence" class="w-full h-auto rounded-lg shadow-2xl border border-gray-700 max-h-[80vh] object-contain">
-            <button onclick="closeImageModal()" class="mt-4 w-full py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm">✖️ ปิดหน้าต่างนี้</button>
-        </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('oldMoneyModal')">ยกเลิก</button>
+      <button class="btn-primary" onclick="saveOldMoney()">💾 บันทึกเงินเก่า</button>
     </div>
+  </div>
+</div>
 
-    <div id="periodModal" class="modal">
-        <div class="card p-6 w-full max-w-sm mx-4">
-            <h3 class="text-lg font-bold text-white mb-3">🔄 ตั้งค่ารอบเก็บเงินใหม่</h3>
-            <p class="text-xs text-gray-400 mb-4">*การเพิ่มรอบใหม่ จะเคลียร์สถานะของทุกคนในตารางรายรับเป็น 'ยังไม่จ่าย' อัตโนมัติ เพื่อเริ่มเก็บเงินรอบถัดไป แต่อยอดเงินสุทธิจะยังสะสมต่อเนื่องคงเดิม</p>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">ชื่อรอบปัจจุบัน</label>
-                    <input type="text" id="newPeriodName" placeholder="เช่น สัปดาห์ที่ 2" class="w-full p-2.5 rounded-lg input-dark text-sm">
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="closePeriodModal()" class="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">ยกเลิก</button>
-                    <button onclick="savePeriod()" class="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg text-sm">➕ เพิ่มรอบใหม่</button>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="modal-overlay" id="slipModal">
+  <div class="modal" style="max-width:400px">
+    <button class="modal-close" onclick="closeModal('slipModal')">✕</button>
+    <h2>สลิปการโอน</h2>
+    <p class="sub" id="slipModalName">—</p>
+    <img class="slip-view-img" id="slipViewImg" src="" alt="สลิป" />
+    <div style="margin-top:12px;font-size:0.82rem;color:var(--muted);text-align:center" id="slipModalDate">—</div>
+  </div>
+</div>
 
-    <script>
-        // 🚨 สลับลิงก์มาใช้ ID ส่วนตัวของคุณเรียบร้อยแล้ว ปลอดภัย 100% ไม่ค้างแน่นอนครับ
-        const ONLINE_SYNC_URL = 'https://api.jsonbin.io/v3/b/6a0b3616ee5a733b12dcc698?meta=false';
-        const ADMIN_PASS = 'CoolKoko';
-        let isAdminMode = false;
+<div class="toast" id="toast">บันทึกแล้ว ✓</div>
 
-        // รายชื่อนักเรียนมาตรฐาน 38 คนในห้อง
-        const defaultNames = [
-            "นายกรวิชญ์ บรรพต", "นายกฤษกร นามศิริ", "นายกฤษณพล จรบุรมย์", "นายนันทกร แก้วระยับ",
-            "นายภูริช จารุเนตร", "นายรพีพงศ์ นิมิตกุลชัย", "นายศุภวิชญ์ บุญเพ็ง", "นายอธิพัชร ด่านตระกูล",
-            "นายอภิวัฒน์ จันทร์อร่าม", "นางสาวกรรณิการ์ แข็งแรง", "นางสาวกัญญาวีร์ ศรีกรด", "นางสาวชลธิชา เจริญชัย",
-            "นางสาวชลธิชา มิ่งแฝง", "นางสาวญาณิศา เสนาฤทธิ์", "นางสาวฐิติวรดา ดอนเสนา", "นางสาวณัฐนิชา กองแก้ว",
-            "นางสาวทิพพาภรณ์ ไชยรส", "นางสาวธรรญชนก กวานกระโทก", "นางสาวธันย์ชนก พิศงาม", "นางสาวธิดารัตน์ ดวงนิล",
-            "นางสาวนันทิกานต์ คุ้มเจริญ", "นางสาวปภาวรินทร์ ประคองใจ", "นางสาวประภัสสร มาลัยหอม", "นางสาวประภัสสร แย้มประโคน",
-            "นางสาวปรียาภัทร อุทุมพร", "นางสาวปาริชาต กิตติคุณไพศาล", "นางสาวปิยะธิดา พรมแก้วมณี", "นางสาวพชรมน มะลิซ้อน",
-            "นางสาวพรพิมล เสมารัมย์", "นางสาวพรหมพรรณ ทิพย์ลุ้ย", "นางสาวพัชริดา มีชนะ", "นางสาวภัทรวดี ไชยรักษ์",
-            "นางสาววรัญญา บดกระโทก", "นางสาววิลาสินี แก้วปัดชา", "นางสาวศศิภา แสงลุน", "นางสาวศิริลักษณ์ ดินกระโทก",
-            "นางสาวสุชาวดี ชวานิชโยธิน", "นางสาวอริสรา พนมเขตต์"
-        ];
+<script>
+// ======== DATA ========
+const MEMBERS = [
+  {no:1, code:'38793', name:'นาย กฤตธร ทองอ่อน'},
+  {no:2, code:'38831', name:'นาย คิดคม ปะเมโท'},
+  {no:3, code:'38857', name:'นาย สุรัชกร สอนเอก'},
+  {no:4, code:'38923', name:'นาย ธีรวัฒน์ หนูมา'},
+  {no:5, code:'38951', name:'นาย เอกภิญโญ เขียวอ่อน'},
+  {no:6, code:'38974', name:'นาย ธนันดร ไชยรัมย์'},
+  {no:7, code:'38600', name:'นางสาว กัลย์ธิดา แก้วขวัญไกร'},
+  {no:8, code:'38689', name:'นางสาว พรรณกาญจน์ ค่าภาน'},
+  {no:9, code:'42136', name:'นางสาว ณัฐรดา อันทาน'},
+  {no:10, code:'38762', name:'นางสาว ณัฏฐณีชา จันทร์โนนม่วง'},
+  {no:11, code:'38805', name:'นางสาว จิราพัชร หรีกประโดน'},
+  {no:12, code:'38844', name:'นางสาว ชนิสรา วรรณสุทธิ์'},
+  {no:13, code:'38849', name:'นางสาว ทรรศยา เต็มรัมย์'},
+  {no:14, code:'38931', name:'นางสาว กัญญาณัฐ สายวิเศษ'},
+  {no:15, code:'38934', name:'นางสาว กุลณัฐดา สมศรี'},
+  {no:16, code:'38935', name:'นางสาว คุณัชชา น้อยพลี'},
+  {no:17, code:'38942', name:'นางสาว ธัญพิชชา หมอทอง'},
+  {no:18, code:'38952', name:'นางสาว ปริชาติ ปะโนรัมย์'},
+  {no:19, code:'38955', name:'นางสาว พาขวัญ ศรีวีระพันธ์'},
+  {no:20, code:'39015', name:'นาย เกียรติคุณ วิโรจน์รัตนกุล'},
+  {no:21, code:'39037', name:'นาย รัชชานนท์ คานศรี'},
+  {no:22, code:'39057', name:'นาย ณัฐดนัย กระเชิญรัมย์'},
+  {no:23, code:'41296', name:'นาย ยิ่งคุณ ยอดเครือ'},
+  {no:24, code:'41297', name:'นาย ธนพล วงษ์กะวัน'},
+  {no:25, code:'41298', name:'นาย ปุญญพัตน์ ธิมะดี'},
+  {no:26, code:'39424', name:'นางสาว กัญญาวีร์ เณรทักลางดอน'},
+  {no:27, code:'39003', name:'นางสาว มณีรัตน์ เจกรัมย์'},
+  {no:28, code:'41402', name:'นางสาว น้ำทิพย์ ช่างดี'},
+  {no:29, code:'39050', name:'นางสาว รุ่งณภา กสิกิจ'},
+  {no:30, code:'41299', name:'นางสาว สิรภัทร รัตนชู'},
+  {no:31, code:'41300', name:'นางสาว ณิชญ์ชญินทร์ จันทรสิงห์'},
+  {no:32, code:'41301', name:'นางสาว วรัทยา นิยมพลอย'},
+  {no:33, code:'41302', name:'นางสาว สิรีกาญจน์ อ่ารุงแคว้น'},
+  {no:34, code:'42120', name:'นางสาว บุณณดา นิทะรัมย์'},
+  {no:35, code:'41304', name:'นางสาว ภัทราวดี ไปดี'},
+  {no:36, code:'41305', name:'นางสาว เมธปิยา แซมรัมย์'},
+  {no:37, code:'41306', name:'นางสาว พรพิมล กิชะรัมย์'},
+  {no:38, code:'41307', name:'นางสาว โชติกา ลักขษร'},
+];
 
-        let state = { students: [], expenses: [], currentPeriod: "สัปดาห์ที่ 1" };
+const LOCAL_STORAGE_KEY = 'roomPaymentData_v3';
+// 🚨 อัปเดตท่อเชื่อมต่อหลังบ้านเป็น ID คีย์ใหม่ของคุณแล้ว ข้อมูลแยกอิสระ ไม่ค้างแน่นอน
+const ONLINE_SYNC_URL = 'https://api.jsonbin.io/v3/b/6a0b3616ee5a733b12dcc698?meta=false'; 
 
-        window.onload = function() {
-            setTodayDateFields();
-            fetchOnlineData();
-            setInterval(fetchOnlineData, 10000); // Polling ดึงข้อมูลใหม่ทุกๆ 10 วินาทีอัตโนมัติ
-        };
+let state = {
+  rounds: [{ id: 'r1', name: 'สัปดาห์ที่ 1', payments: {} }],
+  currentRound: 'r1',
+  oldMoney: 0,
+  expenses: []
+};
 
-        function setTodayDateFields() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('expDate').value = today;
-            document.getElementById('modalDate').value = today;
+let isAdmin = false;
+let currentMainTab = 'payment';
+
+// ======== ADMIN ACCESS CONTROL ========
+function toggleAdminMode() {
+  if (isAdmin) {
+    isAdmin = false;
+    document.body.classList.remove('admin-mode');
+    document.getElementById('adminBtn').textContent = '🔑 เข้าสู่ระบบแอดมิน';
+    document.getElementById('adminBadge').className = 'admin-badge status-is-viewer';
+    document.getElementById('adminBadge').textContent = '👁️ โหมดผู้ใช้ทั่วไป (ดูได้อย่างเดียว)';
+    renderTable();
+    renderExpenses();
+    showToast('ออกจากโหมดแอดมินแล้ว');
+  } else {
+    const pw = prompt('กรุณากรอกรหัสผ่านสำหรับแก้ไขข้อมูล:');
+    if (pw === 'CoolKoko') {
+      isAdmin = true;
+      document.body.classList.add('admin-mode');
+      document.getElementById('adminBtn').textContent = '🔒 ออกจากแอดมิน';
+      document.getElementById('adminBadge').className = 'admin-badge status-is-admin';
+      document.getElementById('adminBadge').textContent = '⚡ โหมดแอดมิน (สิทธิ์การแก้ไข)';
+      renderTable();
+      renderExpenses();
+      showToast('ยินดีต้อนรับแอดมิน คูลโคโค่! 🥥');
+    } else if (pw !== null) {
+      alert('❌ รหัสผ่านไม่ถูกต้อง ไม่สามารถแก้ไขข้อมูลได้');
+    }
+  }
+}
+
+// ======== DATA HANDLING (LOCAL + INTERNET SYNC) ========
+async function loadState() {
+  // 1. ดึงจากเครื่องเผื่อเน็ตไม่มี
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) state = JSON.parse(saved);
+  } catch(e) {}
+
+  // 2. ซิงก์ออนไลน์ดึงค่าล่าสุดที่คุยกับเพื่อน
+  try {
+    const res = await fetch(ONLINE_SYNC_URL, {
+      headers: { "X-Bin-Meta": "false", "X-Master-Key": "$2b$10$vE2bBGrQWhf/7F2T8WqG/.72h7qO4r8EUpG29U9Z8uIAsm2Kq1pX2" }
+    });
+    if(res.ok) {
+      const onlineState = await res.json();
+      if(onlineState && onlineState.rounds) {
+        state = onlineState;
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+      }
+    }
+  } catch(e) {
+    console.log("ใช้งาน Offline จากข้อมูลในเครื่อง");
+  }
+
+  // ตั้งค่าวันที่ของฟอร์มจ่ายให้เป็นวันนี้อัตโนมัติ
+  if(document.getElementById('expDate')) {
+    document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+  }
+
+  renderRoundSelect();
+  renderStats();
+  renderTable();
+  renderExpenses();
+}
+
+async function saveState() {
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+  
+  // ส่งข้อมูลขึ้นคลาวด์แชร์ออนไลน์ให้เพื่อนๆ เห็นทันที
+  try {
+    await fetch(ONLINE_SYNC_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': '$2b$10$vE2bBGrQWhf/7F2T8WqG/.72h7qO4r8EUpG29U9Z8uIAsm2Kq1pX2'
+      },
+      body: JSON.stringify(state)
+    });
+  } catch(e) {
+    console.error("ไม่สามารถอัปเดตออนไลน์ได้เซฟไว้ในเครื่องแทน");
+  }
+}
+
+function currentRoundData() {
+  return state.rounds.find(r => r.id === state.currentRound) || state.rounds[0];
+}
+
+// ======== TAB NAVIGATION ========
+function switchMainTab(tabName) {
+  currentMainTab = tabName;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+  
+  document.getElementById(`tab-${tabName}`).classList.add('active');
+  document.getElementById(`section-${tabName}`).classList.add('active');
+}
+
+// ======== ROUNDS ========
+function addRound() {
+  if(!isAdmin) return alert('ต้องล็อกอินแอดมินก่อนครับ');
+  const inp = document.getElementById('newRoundName');
+  const name = inp.value.trim() || `สัปดาห์ที่ ${state.rounds.length + 1}`;
+  const id = 'r' + Date.now();
+  state.rounds.push({ id, name, payments: {} });
+  state.currentRound = id;
+  inp.value = '';
+  saveState();
+  renderRoundSelect();
+  renderStats();
+  renderTable();
+  showToast(`เพิ่มรอบ "${name}" แล้ว`);
+}
+
+function switchRound() {
+  state.currentRound = document.getElementById('roundSelect').value;
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+  renderStats();
+  renderTable();
+}
+
+function renderRoundSelect() {
+  const sel = document.getElementById('roundSelect');
+  if (!sel) return;
+  sel.innerHTML = state.rounds.map(r =>
+    `<option value="${r.id}" ${r.id === state.currentRound ? 'selected' : ''}>${r.name}</option>`
+  ).join('');
+}
+
+// ======== STATS (เงินห้อง & รายจ่ายสุทธิ) ========
+function renderStats() {
+  const rd = currentRoundData();
+  const payments = rd.payments;
+  let paidCount = 0, lateCount = 0, unpaidCount = 0;
+  
+  // 1. คำนวณเงินทั้งหมดที่ได้จากระบบกรอกรอบสัปดาห์ต่างๆ
+  let totalIncomeFromRounds = 0;
+  state.rounds.forEach(r => {
+    Object.values(r.payments).forEach(p => {
+      if (p.status === 'paid') totalIncomeFromRounds += 50;
+      if (p.status === 'late') totalIncomeFromRounds += 70;
+    });
+  });
+
+  // นับจำนวนคนเฉพาะรอบปัจจุบัน
+  MEMBERS.forEach(m => {
+    const p = payments[m.code];
+    if (!p || p.status === 'unpaid') { unpaidCount++; }
+    else if (p.status === 'paid') { paidCount++; }
+    else if (p.status === 'late') { lateCount++; }
+  });
+
+  // 2. คำนวณรายจ่ายทั้งหมด
+  let totalExpenses = 0;
+  if(state.expenses) {
+    state.expenses.forEach(e => totalExpenses += Number(e.amount || 0));
+  }
+
+  // 3. คำนวณเงินสุทธิ: เงินเก่าสะสม + รายรับสัปดาห์ - รายจ่ายห้อง
+  const oldMoney = Number(state.oldMoney || 0);
+  const netBalance = oldMoney + totalIncomeFromRounds - totalExpenses;
+
+  const statsBar = document.getElementById('statsBar');
+  if (statsBar) {
+    statsBar.innerHTML = `
+      <div class="stat-card"><div class="stat-num purple">${paidCount+lateCount}/${MEMBERS.length}</div><p>จ่ายแล้วรอบนี้</p></div>
+      <div class="stat-card"><div class="stat-num blue">฿${oldMoney}</div><p>เงินเก่าสะสม</p></div>
+      <div class="stat-card"><div class="stat-num green">฿${totalIncomeFromRounds}</div><p>รายรับรวมทุกสัปดาห์</p></div>
+      <div class="stat-card"><div class="stat-num red">฿${totalExpenses}</div><p>รายจ่ายรวม</p></div>
+      <div class="stat-card" style="border-color:var(--green); background:rgba(74,222,128,0.03)"><div class="stat-num green">฿${netBalance}</div><p>💰 เงินคงเหลือสุทธิ</p></div>
+    `;
+  }
+  
+  const exportSummary = document.getElementById('exportSummary');
+  if (exportSummary) {
+    exportSummary.textContent = `รอบ: ${rd.name} | จ่ายแล้ว ${paidCount+lateCount}/${MEMBERS.length} คน | เงินห้องคงเหลือ: ฿${netBalance}`;
+  }
+}
+
+// ======== TABLE & FILTERS ========
+let currentFilter = 'all';
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function renderTable() {
+  const rd = currentRoundData();
+  const payments = rd.payments;
+  const searchInput = document.getElementById('searchInput');
+  const search = searchInput ? searchInput.value.toLowerCase() : '';
+
+  let rows = MEMBERS.map(m => {
+    const p = payments[m.code];
+    const status = p ? p.status : 'unpaid';
+    return { ...m, pay: p, status };
+  });
+
+  if (search) {
+    rows = rows.filter(r => r.name.toLowerCase().includes(search) || r.code.includes(search));
+  }
+  if (currentFilter !== 'all') {
+    rows = rows.filter(r => r.status === currentFilter);
+  }
+
+  const tableBody = document.getElementById('tableBody');
+  if (!tableBody) return;
+
+  tableBody.innerHTML = rows.map(r => {
+    let badge = '', dateStr = '—', amtStr = '—';
+    if (r.status === 'paid') {
+      badge = '<span class="status-badge status-paid">✅ จ่ายแล้ว</span>';
+      dateStr = r.pay.date || '—';
+      amtStr = '50 บาท';
+    } else if (r.status === 'late') {
+      badge = '<span class="status-badge status-late">⚠️ จ่ายสาย</span>';
+      dateStr = r.pay.date || '—';
+      amtStr = '70 บาท <span class="fine-tag">+ปรับ 20</span>';
+    } else {
+      badge = '<span class="status-badge status-unpaid">❌ ยังไม่จ่าย</span>';
+    }
+
+    const slipBtn = r.pay && r.pay.slip
+      ? `<button class="action-btn slip-btn" onclick='viewSlip("${r.code}")'>🖼 ดูสลิป</button>`
+      : '';
+
+    // สิทธิ์การกดปุ่มบันทึกแก้ไข: ถ้าเป็นแอดมินจะแก้ได้ ถ้าเป็น Viewer จะกดดูสถานะได้อย่างเดียว
+    let editBtn = '';
+    if (isAdmin) {
+      editBtn = r.pay && r.pay.status !== 'unpaid'
+        ? `<button class="action-btn" onclick='openPayModal("${r.code}")'>✏️ แก้ไข</button>`
+        : `<button class="action-btn paid-btn" onclick='openPayModal("${r.code}")'>+ บันทึก</button>`;
+    } else {
+      editBtn = `<span style="color:var(--muted); font-size:0.75rem">🔒 ล็อกไว้</span>`;
+    }
+
+    return `<tr>
+      <td class="badge-no">${r.no}</td>
+      <td class="member-code">${r.code}</td>
+      <td>${r.name}</td>
+      <td>${badge}</td>
+      <td style="font-size:0.82rem;color:var(--muted)">${dateStr}</td>
+      <td style="font-size:0.82rem">${amtStr}</td>
+      <td><div class="btn-group">${editBtn}${slipBtn}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ======== PAY MODAL ACTIONS ========
+let currentCode = null;
+let slipDataUrl = null;
+
+function openPayModal(code) {
+  if(!isAdmin) return;
+  const m = MEMBERS.find(x => x.code === code);
+  currentCode = code;
+  slipDataUrl = null;
+
+  document.getElementById('payModalName').textContent = `${m.no}. ${m.name} (${code})`;
+  document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('payStatus').value = 'paid';
+  document.getElementById('amountDue').textContent = '50 บาท';
+
+  const rd = currentRoundData();
+  const existing = rd.payments[code];
+  if (existing) {
+    document.getElementById('payStatus').value = existing.status;
+    if (existing.date) document.getElementById('payDate').value = existing.date;
+    updateAmountDue();
+    if (existing.slip) {
+      slipDataUrl = existing.slip;
+      document.getElementById('slipPreviewImg').src = existing.slip;
+      document.getElementById('slipPreview').classList.add('visible');
+    } else {
+      document.getElementById('slipPreview').classList.remove('visible');
+    }
+  } else {
+    document.getElementById('slipPreview').classList.remove('visible');
+  }
+
+  document.getElementById('payModal').classList.add('open');
+}
+
+function updateAmountDue() {
+  const v = document.getElementById('payStatus').value;
+  if(v === 'late') document.getElementById('amountDue').textContent = '70 บาท (50 + ปรับ 20)';
+  else if(v === 'paid') document.getElementById('amountDue').textContent = '50 บาท';
+  else document.getElementById('amountDue').textContent = '0 บาท (ลบประวัติจ่าย)';
+}
+
+function previewSlip(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    slipDataUrl = ev.target.result;
+    document.getElementById('slipPreviewImg').src = slipDataUrl;
+    document.getElementById('slipPreview').classList.add('visible');
+  };
+  reader.readAsDataURL(file);
+}
+
+function savePay() {
+  if (!currentCode) return;
+  const rd = currentRoundData();
+  const statusValue = document.getElementById('payStatus').value;
+
+  if(statusValue === 'unpaid') {
+    delete rd.payments[currentCode]; // ลบประวัติกรณีพิมผิดหรือยกเลิกจ่าย
+  } else {
+    rd.payments[currentCode] = {
+      status: statusValue,
+      date: document.getElementById('payDate').value,
+      slip: slipDataUrl || (rd.payments[currentCode]?.slip) || null,
+      savedAt: new Date().toISOString()
+    };
+  }
+  
+  saveState();
+  renderStats();
+  renderTable();
+  closeModal('payModal');
+  showToast('บันทึกยอดชำระแล้ว ✓');
+}
+
+// ======== OLD MONEY BUDGET MANAGEMENT ========
+function openOldMoneyModal() {
+  document.getElementById('oldMoneyInput').value = state.oldMoney || 0;
+  document.getElementById('oldMoneyModal').classList.add('open');
+}
+
+function saveOldMoney() {
+  const val = document.getElementById('oldMoneyInput').value;
+  state.oldMoney = Number(val) || 0;
+  saveState();
+  renderStats();
+  closeModal('oldMoneyModal');
+  showToast('อัปเดตยอดเงินเก่าห้องเรียบร้อยครับ!');
+}
+
+// ======== EXPENSES MANAGEMENT ========
+function addExpense() {
+  if(!isAdmin) return alert('เฉพาะแอดมินจึงเพิ่มรายจ่ายได้');
+  const title = document.getElementById('expTitle').value.trim();
+  const amount = Number(document.getElementById('expAmount').value);
+  const date = document.getElementById('expDate').value;
+
+  if(!title || !amount) {
+    alert('⚠️ กรุณากรอกชื่อรายละเอียดและจำนวนเงินจ่ายด้วยครับ');
+    return;
+  }
+
+  if(!state.expenses) state.expenses = [];
+  
+  state.expenses.push({
+    id: 'exp' + Date.now(),
+    title: title,
+    amount: amount,
+    date: date || new Date().toISOString().split('T')[0]
+  });
+
+  // เคลียร์ค่าในฟอร์มออก
+  document.getElementById('expTitle').value = '';
+  document.getElementById('expAmount').value = '';
+
+  saveState();
+  renderStats();
+  renderExpenses();
+  showToast('บันทึกค่าใช้จ่ายห้องสำเร็จ! 💸');
+}
+
+function deleteExpense(id) {
+  if(!isAdmin) return;
+  if(confirm('คุณแน่ใจไหมว่าต้องการลบรายการจ่ายนี้ออก?')) {
+    state.expenses = state.expenses.filter(e => e.id !== id);
+    saveState();
+    renderStats();
+    renderExpenses();
+    showToast('ลบรายการออกแล้ว');
+  }
+}
+
+function renderExpenses() {
+  const tbody = document.getElementById('expenseTableBody');
+  if(!tbody) return;
+  
+  if(!state.expenses || state.expenses.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${isAdmin ? 4 : 3}" style="text-align:center; color:var(--muted)">ยังไม่มีประวัติการเบิกจ่ายเงินห้อง</td></tr>`;
+    return;
+  }
+
+  // เรียงวันที่ล่าสุดขึ้นก่อน
+  const sortedExpenses = [...state.expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  tbody.innerHTML = sortedExpenses.map(e => {
+    const delBtn = isAdmin 
+      ? `<td><button class="action-btn" style="color:var(--red); border-color:rgba(248,113,113,0.2)" onclick="deleteExpense('${e.id}')">🗑️ ลบ</button></td>`
+      : '';
+    return `<tr>
+      <td style="font-family:'IBM Plex Mono', monospace; font-size:0.85rem; color:var(--muted)">${e.date}</td>
+      <td style="font-weight:500">${e.title}</td>
+      <td style="color:var(--red); font-weight:600">- ฿${e.amount} บาท</td>
+      ${delBtn}
+    </tr>`;
+  }).join('');
+}
+
+// ======== SLIP VIEW OVERLAY ========
+function viewSlip(code) {
+  const m = MEMBERS.find(x => x.code === code);
+  const rd = currentRoundData();
+  const p = rd.payments[code];
+  if (!p || !p.slip) return;
+  document.getElementById('slipModalName').textContent = m.name;
+  document.getElementById('slipViewImg').src = p.slip;
+  document.getElementById('slipModalDate').textContent = `วันที่จ่าย: ${p.date || '—'}`;
+  document.getElementById('slipModal').classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// ======== EXPORT FUNCTIONALITIES ========
+function exportCSV() {
+  const rd = currentRoundData();
+  const rows = [['ลำดับ','รหัส','ชื่อ-นามสกุล','สถานะ','วันที่จ่าย','ยอด','มีสลิป']];
+  MEMBERS.forEach(m => {
+    const p = rd.payments[m.code];
+    rows.push([
+      m.no, m.code, m.name,
+      p ? (p.status === 'paid' ? 'จ่ายแล้ว' : 'จ่ายสาย') : 'ยังไม่จ่าย',
+      p?.date || '',
+      p ? (p.status === 'late' ? 70 : 50) : 0,
+      p?.slip ? 'มี' : 'ไม่มี'
+    ]);
+  });
+  const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `เงินห้อง_${rd.name}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function exportSummaryTxt() {
+  const rd = currentRoundData();
+  let paid = [], late = [], unpaid = [];
+  MEMBERS.forEach(m => {
+    const p = rd.payments[m.code];
+    if (!p || p.status === 'unpaid') unpaid.push(m);
+    else if (p.status === 'paid') paid.push(m);
+    else late.push(m);
+  });
+  
+  let roundMoney = paid.length * 50 + late.length * 70;
+  let totalExpenses = 0;
+  if(state.expenses) state.expenses.forEach(e => totalExpenses += Number(e.amount || 0));
+
+  let txt = `📊 สรุปยอดเงินห้องออนไลน์ — ${rd.name}\n`;
+  txt += `${'─'.repeat(40)}\n`;
+  txt += `✅ จ่ายแล้ว (${paid.length} คน):\n`;
+  paid.forEach(m => txt += `  • ${m.name}\n`);
+  txt += `\n⚠️ จ่ายสาย +ค่าปรับ (${late.length} คน):\n`;
+  late.forEach(m => txt += `  • ${m.name}\n`);
+  txt += `\n❌ ยังไม่จ่าย (${unpaid.length} คน):\n`;
+  unpaid.forEach(m => txt += `  • ${m.name}\n`);
+  txt += `\n${'─'.repeat(40)}\n`;
+  txt += `💰 ยอดเก็บได้ของรอบนี้: ${roundMoney} บาท\n`;
+  txt += `🪙 ยอดเงินสะสมเก่าตั้งต้น: ${state.oldMoney || 0} บาท\n`;
+  txt += `💸 ยอดหักรายจ่ายห้องรวม: ${totalExpenses} บาท\n`;
+  txt += `✨ เงินคงเหลือสุทธิทั้งหมดในห้อง: ${(Number(state.oldMoney||0) + roundMoney) - totalExpenses} บาท\n`;
+  
+  const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `สรุปเงินห้อง_${rd.name}.txt`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ======== INITIAL LOAD ========
+window.addEventListener('DOMContentLoaded', () => {
+  loadState();
+
+  // 🔄 ระบบอัปเดตข้อมูลแบบเรียลไทม์ (Auto-Polling)
+  // จะทำกลไกดึงข้อมูลใหม่จากฐานข้อมูลขึ้นมาอัปเดตหน้าเว็บทุกๆ 8 วินาทีอัตโนมัติ
+  setInterval(async () => {
+    try {
+      const res = await fetch(ONLINE_SYNC_URL, {
+        headers: { "X-Bin-Meta": "false", "X-Master-Key": "$2b$10$vE2bBGrQWhf/7F2T8WqG/.72h7qO4r8EUpG29U9Z8uIAsm2Kq1pX2" }
+      });
+      if(res.ok) {
+        const onlineState = await res.json();
+        if(onlineState && onlineState.rounds) {
+          // ตรวจสอบข้อมูลเพื่ออัปเดตเฉพาะตอนไม่ได้เปิดหน้าต่างกรอกข้อมูลค้างอยู่ (ป้องกันการพิมพ์ฟอร์มหลุด)
+          const isModalOpen = document.getElementById('payModal').classList.contains('open') || 
+                              document.getElementById('oldMoneyModal').classList.contains('open');
+          
+          if (!isModalOpen) {
+            state = onlineState;
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+            renderRoundSelect();
+            renderStats();
+            renderTable();
+            renderExpenses();
+          }
         }
-
-        async function fetchOnlineData() {
-            try {
-                const res = await fetch(ONLINE_SYNC_URL);
-                if (!res.ok) throw new Error("ไม่สามารถดึงข้อมูลคลาวด์ได้");
-                const data = await res.json();
-                
-                if (data.students && data.students.length > 0) {
-                    state = data;
-                } else {
-                    initDefaultState();
-                }
-                renderDashboard();
-            } catch (err) {
-                console.error("Error loading data:", err);
-                if (state.students.length === 0) {
-                    initDefaultState();
-                    renderDashboard();
-                }
-            }
-        }
-
-        function initDefaultState() {
-            state.students = defaultNames.map((name, i) => ({
-                no: i + 1,
-                name: name,
-                status: "❌ ยังไม่จ่าย",
-                date: "-",
-                slip: ""
-            }));
-            state.expenses = [];
-            state.currentPeriod = "สัปดาห์ที่ 1";
-        }
-
-        async function pushOnlineData() {
-            try {
-                await fetch(ONLINE_SYNC_URL, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(state)
-                });
-            } catch (err) {
-                alert("ระบบคลาวด์ขัดข้อง ไม่สามารถบันทึกข้อมูลออนไลน์ได้ชั่วคราว");
-            }
-        }
-
-        function renderDashboard() {
-            document.getElementById('periodLabel').innerText = state.currentPeriod;
-            
-            let totalIncome = 0;
-            state.students.forEach(st => {
-                if (st.status === "✅ จ่ายแล้ว") totalIncome += 50;
-                else if (st.status === "⚠️ จ่ายสาย") totalIncome += 70;
-            });
-
-            let totalExpense = state.expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
-            let netBalance = totalIncome - totalExpense;
-
-            document.getElementById('totalIncome').innerText = totalIncome.toFixed(2) + " บาท";
-            document.getElementById('totalExpense').innerText = totalExpense.toFixed(2) + " บาท";
-            document.getElementById('netBalance').innerText = netBalance.toFixed(2) + " บาท";
-
-            renderStudentTable();
-            renderExpenseTable();
-        }
-
-        function renderStudentTable() {
-            const tbody = document.getElementById('studentTableBody');
-            tbody.innerHTML = "";
-
-            state.students.forEach((st, index) => {
-                let badgeClass = "status-danger";
-                if (st.status === "✅ จ่ายแล้ว") badgeClass = "status-success";
-                if (st.status === "⚠️ จ่ายสาย") badgeClass = "status-warning";
-
-                let slipButton = st.slip ? 
-                    `<button onclick="viewSlip('${st.slip}')" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-purple-400 border border-purple-500/30 text-xs rounded-md transition">🖼️ ดูสลิป</button>` : 
-                    `<span class="text-gray-600 text-xs">- ไม่มี -</span>`;
-
-                let row = document.createElement('tr');
-                row.className = "border-b border-gray-800 hover:bg-gray-800/30 text-sm";
-                row.innerHTML = `
-                    <td class="p-4 text-center text-gray-400 font-mono">${st.no}</td>
-                    <td class="p-4 font-medium text-white">${st.name}</td>
-                    <td class="p-4 text-center"><span class="status-badge ${badgeClass}">${st.status}</span></td>
-                    <td class="p-4 text-center text-gray-400 text-xs">${st.date || '-'}</td>
-                    <td class="p-4 text-center">${slipButton}</td>
-                    <td class="p-4 text-center admin-only ${isAdminMode ? '' : 'hidden'}">
-                        <button onclick="openRecordModal(${index})" class="px-3 py-1 bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600 hover:text-white rounded-md text-xs transition">✏️ บันทึก</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-            filterTable();
-        }
-
-        function renderExpenseTable() {
-            const tbody = document.getElementById('expenseTableBody');
-            tbody.innerHTML = "";
-
-            if (state.expenses.length === 0) {
-                document.getElementById('noExpense').classList.remove('hidden');
-                return;
-            }
-            document.getElementById('noExpense').classList.add('hidden');
-
-            state.expenses.forEach((exp, idx) => {
-                let row = document.createElement('tr');
-                row.className = "border-b border-gray-800 text-sm text-gray-300";
-                row.innerHTML = `
-                    <td class="py-3 text-xs text-gray-500">${exp.date}</td>
-                    <td class="py-3 text-white font-medium">${exp.desc}</td>
-                    <td class="py-3 text-right text-red-400 font-mono">-${Number(exp.amount).toFixed(2)}</td>
-                    <td class="py-3 text-center admin-only ${isAdminMode ? '' : 'hidden'}">
-                        <button onclick="deleteExpense(${idx})" class="text-red-500 hover:text-red-400 font-bold text-sm">✕</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        function filterTable() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const rows = document.getElementById('studentTableBody').getElementsByTagName('tr');
-            for (let row of rows) {
-                let name = row.getElementsByTagName('td')[1].innerText.toLowerCase();
-                let no = row.getElementsByTagName('td')[0].innerText.toLowerCase();
-                if (name.includes(query) || no.includes(query)) {
-                    row.style.display = "";
-                } else {
-                    row.style.display = "none";
-                }
-            }
-        }
-
-        function toggleAdminLogin() {
-            if(isAdminMode) return;
-            let pass = prompt("🔐 กรุณากรอกรหัสผ่านเข้าสู่ระบบแอดมิน:");
-            if (pass === ADMIN_PASS) {
-                isAdminMode = true;
-                document.getElementById('adminAuthBtn').classList.add('hidden');
-                document.getElementById('adminBadge').classList.remove('hidden');
-                document.getElementById('logoutBtn').classList.remove('hidden');
-                document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
-                renderDashboard();
-            } else if (pass !== null) {
-                alert("❌ รหัสผ่านไม่ถูกต้อง!");
-            }
-        }
-
-        function logoutAdmin() {
-            isAdminMode = false;
-            document.getElementById('adminAuthBtn').classList.remove('hidden');
-            document.getElementById('adminBadge').classList.add('hidden');
-            document.getElementById('logoutBtn').classList.add('hidden');
-            document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
-            renderDashboard();
-        }
-
-        function openRecordModal(index) {
-            const st = state.students[index];
-            document.getElementById('modalStudentIndex').value = index;
-            document.getElementById('modalStudentName').innerText = st.name;
-            document.getElementById('modalStatus').value = st.status;
-            document.getElementById('modalFile').value = "";
-            setTodayDateFields();
-            document.getElementById('recordModal').style.display = 'flex';
-        }
-
-        function closeRecordModal() {
-            document.getElementById('recordModal').style.display = 'none';
-        }
-
-        function saveRecord() {
-            const idx = document.getElementById('modalStudentIndex').value;
-            const status = document.getElementById('modalStatus').value;
-            const date = document.getElementById('modalDate').value;
-            const fileInput = document.getElementById('modalFile');
-
-            state.students[idx].status = status;
-            state.students[idx].date = (status === "❌ ยังไม่จ่าย") ? "-" : date;
-
-            if (status === "❌ ยังไม่จ่าย") {
-                state.students[idx].slip = "";
-                completeSave();
-            } else if (fileInput.files.length > 0) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    state.students[idx].slip = e.target.result;
-                    completeSave();
-                };
-                reader.readAsDataURL(fileInput.files[0]);
-            } else {
-                completeSave();
-            }
-
-            function completeSave() {
-                closeRecordModal();
-                renderDashboard();
-                pushOnlineData();
-            }
-        }
-
-        function addExpense() {
-            const desc = document.getElementById('expDesc').value.trim();
-            const amount = document.getElementById('expAmount').value;
-            const date = document.getElementById('expDate').value;
-
-            if (!desc || !amount || !date) {
-                alert("กรุณากรอกข้อมูลรายจ่ายให้ครบถ้วนนะครับ");
-                return;
-            }
-
-            state.expenses.push({ desc, amount, date });
-            document.getElementById('expDesc').value = "";
-            document.getElementById('expAmount').value = "";
-            setTodayDateFields();
-
-            renderDashboard();
-            pushOnlineData();
-        }
-
-        function deleteExpense(index) {
-            if (confirm("คุณแน่ใจนะว่าต้องการลบรายการจ่ายนี้?")) {
-                state.expenses.splice(index, 1);
-                renderDashboard();
-                pushOnlineData();
-            }
-        }
-
-        function openPeriodModal() {
-            document.getElementById('newPeriodName').value = state.currentPeriod;
-            document.getElementById('periodModal').style.display = 'flex';
-        }
-
-        function closePeriodModal() {
-            document.getElementById('periodModal').style.display = 'none';
-        }
-
-        function savePeriod() {
-            const newName = document.getElementById('newPeriodName').value.trim();
-            if(!newName) return;
-            
-            state.currentPeriod = newName;
-            state.students.forEach(st => {
-                st.status = "❌ ยังไม่จ่าย";
-                st.date = "-";
-                st.slip = "";
-            });
-
-            closePeriodModal();
-            renderDashboard();
-            pushOnlineData();
-        }
-
-        function viewSlip(base64Src) {
-            document.getElementById('popupImage').src = base64Src;
-            document.getElementById('imageModal').style.display = 'flex';
-        }
-
-        function closeImageModal() {
-            document.getElementById('imageModal').style.display = 'none';
-        }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById(tabId).classList.remove('hidden');
-            
-            document.getElementById('btn-income-tab').className = "px-6 py-3 border-b-2 font-medium transition " + (tabId === 'income-tab' ? 'border-purple-500 text-white' : 'border-transparent text-gray-400');
-            document.getElementById('btn-expense-tab').className = "px-6 py-3 border-b-2 font-medium transition " + (tabId === 'expense-tab' ? 'border-purple-500 text-white' : 'border-transparent text-gray-400');
-        }
-
-        function exportSummaryText() {
-            let paid = state.students.filter(s => s.status.includes('จ่ายแล้ว') || s.status.includes('สาย'));
-            let unpaid = state.students.filter(s => s.status.includes('ยังไม่จ่าย'));
-            
-            let txt = `📊 สรุปยอดเงินห้อง (${state.currentPeriod})\n`;
-            txt += `💰 คงเหลือสุทธิ: ${document.getElementById('netBalance').innerText}\n`;
-            txt += `------------------------\n`;
-            txt += `✅ จ่ายแล้ว (${paid.length} คน)\n`;
-            txt += `❌ ยังไม่จ่าย (${unpaid.length} คน):\n`;
-            unpaid.forEach(s => txt += `• เลขที่ ${s.no} ${s.name}\n`);
-            
-            navigator.clipboard.writeText(txt);
-            alert("📋 คัดลอกรายงานสรุปยอดข้อความลงคลิปบอร์ดแล้ว! สามารถนำไปวางส่งในกลุ่มไลน์ได้ทันที");
-        }
-
-        function exportCSV() {
-            let csv = "\uFEFFเลขที่,ชื่อ-นามสกุล,สถานะ,วันที่จ่าย\n";
-            state.students.forEach(s => {
-                csv += `${s.no},${s.name},${s.status},${s.date}\n`;
-            });
-            let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            let link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", `รายงานเงินห้อง_${state.currentPeriod}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    </script>
+      }
+    } catch(e) {
+      console.log("เรียลไทม์เบื้องหลัง: กำลังพยายามเชื่อมต่อใหม่...");
+    }
+  }, 8000);
+});
+</script>
 </body>
 </html>
